@@ -58,7 +58,7 @@ def get_shortaudio(lang='en'):
     s3 = boto3.client('s3',aws_access_key_id=aws_access_key_id,aws_secret_access_key=aws_secret_access_key)
     # Create a client using the credentials and region defined in the [adminuser]
     # section of the AWS credentials file (~/.aws/credentials).
-    session = Session(profile_name="adminuser")
+    session = Session(profile_name="default")
     polly = session.client("polly") 
 
     if 'lang' in request.args:
