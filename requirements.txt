@@ -6,4 +6,3 @@ boto3>0
 awscli>0
 googletrans>0
 simplejson>0
-tempfile>0

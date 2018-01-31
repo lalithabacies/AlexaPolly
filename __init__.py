@@ -5,7 +5,6 @@ from contextlib import closing
 import os
 import sys
 import subprocess
-from tempfile import gettempdir
 from flask import Flask,request
 import requests
 import boto3
@@ -24,7 +23,10 @@ s3 = boto3.client('s3',aws_access_key_id=aws_access_key_id,aws_secret_access_key
 # section of the AWS credentials file (~/.aws/credentials).
 session = Session(profile_name="adminuser")
 polly = session.client("polly") 
-            
+
+@app.route('/',methods=['GET','POST'])
+def homepage():      
+    pass
 @app.route('/get_text',methods=['GET','POST'])
 def get_text(lang='en'):
     result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=1').json()
