@@ -6,3 +6,5 @@ boto3>0
 awscli>0
 googletrans>0
 simplejson>0
+botocore>0
+boto>0

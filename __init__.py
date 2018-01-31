@@ -1,6 +1,6 @@
 """Getting Started Example for Python 2.7+/3.3+"""
 from boto3 import Session
-#from botocore.exceptions import BotoCoreError, ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 from contextlib import closing
 import os
 import sys
@@ -27,6 +27,7 @@ polly = session.client("polly")
 @app.route('/',methods=['GET','POST'])
 def homepage():      
     return ''
+    
 @app.route('/get_text',methods=['GET','POST'])
 def get_text(lang='en'):
     result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=1').json()
