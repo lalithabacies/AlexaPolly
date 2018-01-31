@@ -26,7 +26,7 @@ polly = session.client("polly")
 
 @app.route('/',methods=['GET','POST'])
 def homepage():      
-    pass
+    return ''
 @app.route('/get_text',methods=['GET','POST'])
 def get_text(lang='en'):
     result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=1').json()
@@ -76,8 +76,6 @@ def get_shortaudio(lang='en'):
             # ensure the close method of the stream object will be called automatically
             # at the end of the with statement's scope.
             with closing(response["AudioStream"]) as stream:
-                #print(gettempdir())
-                #output = os.path.join(gettempdir(), "speech.mp3")
                 output = "speech"+str(l)+".mp3"
 
                 try:
