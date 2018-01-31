@@ -8,4 +8,3 @@ googletrans>0
 simplejson>0
 botocore>0
 boto>0
-awscli==1.14.32
