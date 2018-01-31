@@ -18,11 +18,7 @@ app.secret_key = "amazon_polly_0343sdsad@#$#$%vb2u2"
 aws_access_key_id = "AKIAIXQSPFFFCBPHBAHQ"
 aws_secret_access_key = "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"
 region_name="us-west-2" 
-s3 = boto3.client('s3',aws_access_key_id=aws_access_key_id,aws_secret_access_key=aws_secret_access_key)
-# Create a client using the credentials and region defined in the [adminuser]
-# section of the AWS credentials file (~/.aws/credentials).
-session = Session(profile_name="adminuser")
-polly = session.client("polly") 
+
 
 @app.route('/',methods=['GET','POST'])
 def homepage():      
@@ -59,6 +55,12 @@ def get_text(lang='en'):
             
 @app.route('/get_shortaudio',methods=['GET','POST'])
 def get_shortaudio(lang='en'):
+    s3 = boto3.client('s3',aws_access_key_id=aws_access_key_id,aws_secret_access_key=aws_secret_access_key)
+    # Create a client using the credentials and region defined in the [adminuser]
+    # section of the AWS credentials file (~/.aws/credentials).
+    session = Session(profile_name="adminuser")
+    polly = session.client("polly") 
+
     if 'lang' in request.args:
         lang = request.args.get('lang')
     else:
