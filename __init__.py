@@ -108,7 +108,7 @@ def get_longaudio():
     date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
     short_audio_urls = get_shortaudio()
     combined_url = "combined_"+str(now.strftime("%Y-%m-%d-%H-%M-%S"))+str(".mp3")
-    r = requests.post('http://localhost/AmazonPolly_mp3merge_api/index.php', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
+    r = requests.post('https://amazon-polly-mergemp3.herokuapp.com/', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
     return str(r.json()['combined_mp3'])
 
                 
