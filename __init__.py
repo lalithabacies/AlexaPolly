@@ -11,8 +11,8 @@ import boto3
 import simplejson as json
 from googletrans import Translator
 import datetime
-from apscheduler.schedulers.background import BackgroundScheduler
-import atexit
+#from apscheduler.schedulers.background import BackgroundScheduler
+#import atexit
 import time
 
 app=Flask(__name__)
