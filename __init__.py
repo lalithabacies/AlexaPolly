@@ -58,55 +58,61 @@ def get_text(option=''):
             return Text_content
             
 @app.route('/get_shortaudio',methods=['GET','POST'])
-def get_shortaudio(option=''):
-    # now = datetime.datetime.now()
-    # date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+def get_shortaudio(option='',limit='1'):
+    now = datetime.datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
     
-    # s3 = boto3.client('s3',aws_access_key_id=aws_access_key_id,aws_secret_access_key=aws_secret_access_key)
-    # # Create a client using the credentials and region defined in the [adminuser]
-    # # section of the AWS credentials file (~/.aws/credentials).
-    # session = Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key,region_name=region_name)
-    # polly = session.client("polly") 
+    s3 = boto3.client('s3',aws_access_key_id=aws_access_key_id,aws_secret_access_key=aws_secret_access_key)
+    # Create a client using the credentials and region defined in the [adminuser]
+    # section of the AWS credentials file (~/.aws/credentials).
+    session = Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key,region_name=region_name)
+    polly = session.client("polly") 
     
-    # if 'option' in request.args:
-        # option = request.args.get('option')
+    if 'option' in request.args:
+        option = request.args.get('option')
         
-    # split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
-    # splitted_text = split_string(str(get_text(option)),1000)
-    # sounds       = []
-    # for l in range(0,len(splitted_text)):
-        # # Request speech synthesis
-        # response = polly.synthesize_speech(Text=str(splitted_text[l]), OutputFormat="mp3", VoiceId="Joey")
+    split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
+    splitted_text = split_string(str(get_text(option)),1000)
+    sounds       = []
+    
+    if limit=='1':
+        length=1
+    else:
+        length=len(splitted_text)
+    
+    for l in range(0,length):
+        # Request speech synthesis
+        response = polly.synthesize_speech(Text=str(splitted_text[l]), OutputFormat="mp3", VoiceId="Joey")
         
-        # if "AudioStream" in response:
-            # # Note: Closing the stream is important as the service throttles on the
-            # # number of parallel connections. Here we are using contextlib.closing to
-            # # ensure the close method of the stream object will be called automatically
-            # # at the end of the with statement's scope.
-            # with closing(response["AudioStream"]) as stream:
-                # output = "speech"+str(l)+"_"+str(date_time)+".mp3"
+        if "AudioStream" in response:
+            # Note: Closing the stream is important as the service throttles on the
+            # number of parallel connections. Here we are using contextlib.closing to
+            # ensure the close method of the stream object will be called automatically
+            # at the end of the with statement's scope.
+            with closing(response["AudioStream"]) as stream:
+                output = "speech"+str(l)+"_"+str(date_time)+".mp3"
 
-                # try:
-                    # # Open a file for writing the output as a binary stream
-                    # with open(output, "wb") as file:
-                        # file.write(stream.read())
-                    # bucket_name = 'amazon-polly'
-                    # filename    = output
-                    # s3.upload_file(filename, bucket_name, filename,
-                        # ExtraArgs={'ACL': 'public-read'}
-                    # )
-                    # s3_url = 'https://s3-us-west-2.amazonaws.com/%s/%s' % (bucket_name, filename)
-                    # sounds.append(s3_url)
-                # except IOError as error:
-                    # # Could not write to file, exit gracefully
-                    # print(error)
-                    # #sys.exit(-1)                       
-        # else:
-            # # The response didn't contain audio data, exit gracefully
-            # print("Could not stream audio")
-            # #sys.exit(-1)
-    # return json.dumps(sounds)   
-    return json.dumps(["https://s3-us-west-2.amazonaws.com/amazon-polly/speech0_2018-02-01_14-37-17.mp3", "https://s3-us-west-2.amazonaws.com/amazon-polly/speech1_2018-02-01_14-37-17.mp3", "https://s3-us-west-2.amazonaws.com/amazon-polly/speech2_2018-02-01_14-37-17.mp3"])    
+                try:
+                    # Open a file for writing the output as a binary stream
+                    with open(output, "wb") as file:
+                        file.write(stream.read())
+                    bucket_name = 'amazon-polly'
+                    filename    = output
+                    s3.upload_file(filename, bucket_name, filename,
+                        ExtraArgs={'ACL': 'public-read'}
+                    )
+                    s3_url = 'https://s3-us-west-2.amazonaws.com/%s/%s' % (bucket_name, filename)
+                    sounds.append(s3_url)
+                except IOError as error:
+                    # Could not write to file, exit gracefully
+                    print(error)
+                    #sys.exit(-1)                       
+        else:
+            # The response didn't contain audio data, exit gracefully
+            print("Could not stream audio")
+            #sys.exit(-1)
+    return json.dumps(sounds)   
+    #return json.dumps(["https://s3-us-west-2.amazonaws.com/amazon-polly/speech0_2018-02-01_14-37-17.mp3", "https://s3-us-west-2.amazonaws.com/amazon-polly/speech1_2018-02-01_14-37-17.mp3", "https://s3-us-west-2.amazonaws.com/amazon-polly/speech2_2018-02-01_14-37-17.mp3"])    
             
 @app.route('/get_longaudio',methods=['GET','POST'])
 def get_longaudio(option=''):
@@ -114,7 +120,7 @@ def get_longaudio(option=''):
     date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
     if 'option' in request.args:
         option = request.args.get('option')
-    short_audio_urls = get_shortaudio(option)
+    short_audio_urls = get_shortaudio(option,'full')
     combined_url = "combined_"+str(now.strftime("%Y-%m-%d-%H-%M-%S"))+str(".mp3")
     r = requests.post('https://amazon-polly-mergemp3.herokuapp.com/', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
     return str(r.json()['combined_mp3'])
