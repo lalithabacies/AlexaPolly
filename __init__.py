@@ -10,6 +10,7 @@ import requests
 import boto3
 import simplejson as json
 from googletrans import Translator
+import datetime
 
 
 app=Flask(__name__)
@@ -25,49 +26,48 @@ def homepage():
     return ''
     
 @app.route('/get_text',methods=['GET','POST'])
-def get_text(lang='en'):
+def get_text():
     result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=1').json()
     if 'source' in result:
         Text_URL = result['source']
         Text_content = requests.get(Text_URL).text
-        if 'lang' in request.args:
-            lang = request.args.get('lang')
-            if lang == 'en':
+        source_language      = result['source_language']
+        destination_language = result['destination_language']
+        translation_service  = result['translation_service']
+        if destination_language:
+            if destination_language == 'en':
                 return Text_content
             else:
-                if 'trans_tool' in request.args:
-                    trans_tool = request.args.get('trans_tool')
-                    if trans_tool == 'google':
-                        translator = Translator()
-                        translation = translator.translate(Text_content, dest='es')
-                        Text_content = translation.text
+                if translation_service:
+                    try:
+                        if translation_service == 'google':
+                            translator = Translator()
+                            translation = translator.translate(Text_content,src=source_language,dest=destination_language)
+                            Text_content = translation.text
+                            return Text_content
+                        else: 
+                            ##amazon translator
+                            pass
+                    except Exception as e:
                         return Text_content
-                    else: 
-                        ##amazon translator
-                        pass
                 else:
-                    translator = Translator()
-                    translation = translator.translate(Text_content, dest='es')
-                    Text_content = translation.text
                     return Text_content
         else:
             return Text_content
             
 @app.route('/get_shortaudio',methods=['GET','POST'])
-def get_shortaudio(lang='en'):
+def get_shortaudio():
+    now = datetime.datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+    
     s3 = boto3.client('s3',aws_access_key_id=aws_access_key_id,aws_secret_access_key=aws_secret_access_key)
     # Create a client using the credentials and region defined in the [adminuser]
     # section of the AWS credentials file (~/.aws/credentials).
     session = Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key,region_name=region_name)
     polly = session.client("polly") 
-
-    if 'lang' in request.args:
-        lang = request.args.get('lang')
-    else:
-        lang = 'en'
         
     split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
-    splitted_text = split_string(str(get_text(lang)),1000)
+    splitted_text = split_string(str(get_text()),1000)
     sounds       = []
     for l in range(0,len(splitted_text)):
         # Request speech synthesis
@@ -79,7 +79,7 @@ def get_shortaudio(lang='en'):
             # ensure the close method of the stream object will be called automatically
             # at the end of the with statement's scope.
             with closing(response["AudioStream"]) as stream:
-                output = "speech"+str(l)+".mp3"
+                output = "speech"+str(l)+"_"+str(date_time)+".mp3"
 
                 try:
                     # Open a file for writing the output as a binary stream
@@ -100,14 +100,17 @@ def get_shortaudio(lang='en'):
             # The response didn't contain audio data, exit gracefully
             print("Could not stream audio")
             #sys.exit(-1)
-    return sounds            
+    return json.dumps(sounds)            
             
 @app.route('/get_longaudio',methods=['GET','POST'])
-def get_longaudio(lang='en'):
-    short_audio_urls = get_shortaudio(lang)
-    r = requests.post('http://localhost/AmazonPolly_mp3merge_api/index.php', json = {'Files_To_Merge':short_audio_urls},headers={'Content-type': 'application/json'})
-    combined_url = r.json()['combined_mp3']      
-    return combined_url
+def get_longaudio():
+    now = datetime.datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+    short_audio_urls = get_shortaudio()
+    combined_url = "combined_"+str(now.strftime("%Y-%m-%d-%H-%M-%S"))+str(".mp3")
+    r = requests.post('http://localhost/AmazonPolly_mp3merge_api/index.php', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
+    return str(r.json()['combined_mp3'])
+
                 
 
 
