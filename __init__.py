@@ -110,15 +110,15 @@ def get_shortaudio(option=''):
             
 @app.route('/get_longaudio',methods=['GET','POST'])
 def get_longaudio(option=''):
-    # now = datetime.datetime.now()
-    # date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
-    # if 'option' in request.args:
-        # option = request.args.get('option')
-    # short_audio_urls = get_shortaudio(option)
-    # combined_url = "combined_"+str(now.strftime("%Y-%m-%d-%H-%M-%S"))+str(".mp3")
-    # r = requests.post('https://amazon-polly-mergemp3.herokuapp.com/', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
-    # return str(r.json()['combined_mp3'])
-    return str("https://s3-us-west-2.amazonaws.com/amazon-polly/combined_2018-02-01-10-09-45.mp3")
+    now = datetime.datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+    if 'option' in request.args:
+        option = request.args.get('option')
+    short_audio_urls = get_shortaudio(option)
+    combined_url = "combined_"+str(now.strftime("%Y-%m-%d-%H-%M-%S"))+str(".mp3")
+    r = requests.post('https://amazon-polly-mergemp3.herokuapp.com/', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
+    return str(r.json()['combined_mp3'])
+    #return str("https://s3-us-west-2.amazonaws.com/amazon-polly/combined_2018-02-01-10-09-45.mp3")
 
                 
 
