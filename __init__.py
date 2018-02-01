@@ -11,7 +11,9 @@ import boto3
 import simplejson as json
 from googletrans import Translator
 import datetime
-
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
+import time
 
 app=Flask(__name__)
 app.secret_key = "amazon_polly_0343sdsad@#$#$%vb2u2"
@@ -58,7 +60,7 @@ def get_text(option=''):
             return Text_content
             
 @app.route('/get_shortaudio',methods=['GET','POST'])
-def get_shortaudio(option='',limit='1'):
+def get_shortaudio(combined_url='',option='',limit='1'):
     now = datetime.datetime.now()
     date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
     
@@ -68,11 +70,14 @@ def get_shortaudio(option='',limit='1'):
     session = Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key,region_name=region_name)
     polly = session.client("polly") 
     
-    if 'option' in request.args:
-        option = request.args.get('option')
+    try:
+        if 'option' in request.args:
+            option = request.args.get('option')
+    except Exception as e:
+        option=''
         
     split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
-    splitted_text = split_string(str(get_text(option)),1500)
+    splitted_text = split_string(str(get_text(option)),1000)
     sounds       = []
     
     if limit=='1':
@@ -111,6 +116,11 @@ def get_shortaudio(option='',limit='1'):
             # The response didn't contain audio data, exit gracefully
             print("Could not stream audio")
             #sys.exit(-1)
+            
+    if limit=='full':            
+        r = requests.post('https://amazon-polly-mergemp3.herokuapp.com/', json = {'Files_To_Merge':sounds,"combined_url":combined_url},headers={'Content-type': 'application/json'}) 
+        #time.sleep(5)
+              
     return json.dumps(sounds)   
     #return json.dumps(["https://s3-us-west-2.amazonaws.com/amazon-polly/speech0_2018-02-01_14-37-17.mp3", "https://s3-us-west-2.amazonaws.com/amazon-polly/speech1_2018-02-01_14-37-17.mp3", "https://s3-us-west-2.amazonaws.com/amazon-polly/speech2_2018-02-01_14-37-17.mp3"])    
             
@@ -118,13 +128,27 @@ def get_shortaudio(option='',limit='1'):
 def get_longaudio(option=''):
     now = datetime.datetime.now()
     date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+    combined_url = "combined_"+str(now.strftime("%Y-%m-%d-%H-%M-%S"))+str(".mp3")
     if 'option' in request.args:
         option = request.args.get('option')
-    short_audio_urls = get_shortaudio(option,'full')
-    combined_url = "combined_"+str(now.strftime("%Y-%m-%d-%H-%M-%S"))+str(".mp3")
-    r = requests.post('https://amazon-polly-mergemp3.herokuapp.com/', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
-    return str(r.json()['combined_mp3'])
-    #return str("https://s3-us-west-2.amazonaws.com/amazon-polly/combined_2018-02-01-10-09-45.mp3")
+
+    # scheduler = BackgroundScheduler()
+    # scheduler.start()    
+    # scheduler.add_job(
+        # func=lambda: get_shortaudio(combined_url,option,'full'),
+        # id='longsudio',
+        # name='merging mp3 files',
+        # replace_existing=True)
+    # atexit.register(lambda: scheduler.shutdown())
+    
+    #get_shortaudio(combined_url,option,'full')
+    get_shortaudio(combined_url,option,1)
+    
+    #short_audio_urls = get_shortaudio(option,'full')
+    #r = requests.post('http://localhost/AmazonPolly_mp3merge_api/index.php', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
+    
+    #return str(r.json()['combined_mp3'])
+    return str("https://s3-us-west-2.amazonaws.com/amazon-polly/"+str(combined_url))
 
                 
 
