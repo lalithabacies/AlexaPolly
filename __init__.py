@@ -142,13 +142,14 @@ def get_longaudio(option=''):
     # atexit.register(lambda: scheduler.shutdown())
     
     #get_shortaudio(combined_url,option,'full')
-    get_shortaudio(combined_url,option,1)
+    url = json.loads(get_shortaudio(combined_url,option,1))
     
     #short_audio_urls = get_shortaudio(option,'full')
     #r = requests.post('http://localhost/AmazonPolly_mp3merge_api/index.php', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
     
     #return str(r.json()['combined_mp3'])
-    return str("https://s3-us-west-2.amazonaws.com/amazon-polly/"+str(combined_url))
+    #return str("https://s3-us-west-2.amazonaws.com/amazon-polly/"+str(combined_url))
+    return str(url[0])
 
                 
 
