@@ -72,7 +72,7 @@ def get_shortaudio(option='',limit='1'):
         option = request.args.get('option')
         
     split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
-    splitted_text = split_string(str(get_text(option)),1000)
+    splitted_text = split_string(str(get_text(option)),1500)
     sounds       = []
     
     if limit=='1':
