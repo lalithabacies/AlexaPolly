@@ -26,7 +26,7 @@ def homepage():
     return ''
     
 @app.route('/get_text',methods=['GET','POST'])
-def get_text():
+def get_text(option=''):
     result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=1').json()
     if 'source' in result:
         Text_URL = result['source']
@@ -34,11 +34,14 @@ def get_text():
         source_language      = result['source_language']
         destination_language = result['destination_language']
         translation_service  = result['translation_service']
+        if 'option' in request.args:
+            option = request.args.get('option')
+            
         if destination_language:
             if destination_language == 'en':
                 return Text_content
             else:
-                if translation_service:
+                if translation_service and (option==('6' or 6) or option==('7' or 7)):
                     try:
                         if translation_service == 'google':
                             translator = Translator()
@@ -56,7 +59,7 @@ def get_text():
             return Text_content
             
 @app.route('/get_shortaudio',methods=['GET','POST'])
-def get_shortaudio():
+def get_shortaudio(option=''):
     now = datetime.datetime.now()
     date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
     
@@ -65,9 +68,12 @@ def get_shortaudio():
     # section of the AWS credentials file (~/.aws/credentials).
     session = Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key,region_name=region_name)
     polly = session.client("polly") 
+    
+    if 'option' in request.args:
+        option = request.args.get('option')
         
     split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
-    splitted_text = split_string(str(get_text()),1000)
+    splitted_text = split_string(str(get_text(option)),1000)
     sounds       = []
     for l in range(0,len(splitted_text)):
         # Request speech synthesis
@@ -106,7 +112,9 @@ def get_shortaudio():
 def get_longaudio():
     now = datetime.datetime.now()
     date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
-    short_audio_urls = get_shortaudio()
+    if 'option' in request.args:
+        option = request.args.get('option')
+    short_audio_urls = get_shortaudio(option)
     combined_url = "combined_"+str(now.strftime("%Y-%m-%d-%H-%M-%S"))+str(".mp3")
     r = requests.post('https://amazon-polly-mergemp3.herokuapp.com/', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
     return str(r.json()['combined_mp3'])
