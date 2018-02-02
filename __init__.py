@@ -156,7 +156,6 @@ def make_URLs_ready(length,urls,splitted_text,l):
     #for l in range(1,length):
     # Request speech synthesis
     response = polly.synthesize_speech(Text=str(splitted_text[l]), OutputFormat="mp3", VoiceId="Joey")
-    
     if "AudioStream" in response:
         # Note: Closing the stream is important as the service throttles on the
         # number of parallel connections. Here we are using contextlib.closing to
@@ -214,7 +213,51 @@ def get_longaudio(option=''):
     return str("https://s3-us-west-2.amazonaws.com/amazon-polly/"+str(combined_url))
     #return json.dumps(urls)
 
-                
+@app.route('/getaudio',methods=['GET','POST']) 
+def getlong():
+    now = datetime.datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+    option = ''
+    type   = 'short'
+    try:
+        if 'option' in request.args:
+            option = request.args.get('option')
+    except Exception as e:
+        option = ''
+        
+    try:    
+        if 'type' in request.args:
+            type = request.args.get('type')
+    except Exception as e:        
+        type   = 'short'
+        
+    split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
+    sounds       = []
+    mp3_content=[]
+    
+    if type == 'long':
+        splitted_text= split_string(str(get_text(option)),1500)
+        length = len(splitted_text)
+        filename   = 'polly_longfile'+str(date_time)+'.mp3'
+    else:    
+        splitted_text= split_string(str(get_text(option)),1000)
+        length = 1
+        filename   = 'polly_shortfile'+str(date_time)+'.mp3'
+        
+    
+    for l in range(0,length):
+        response = polly.synthesize_speech(Text=str(splitted_text[l]), OutputFormat="mp3", VoiceId="Joey") 
+        with closing(response["AudioStream"]) as stream:
+            f= open(filename, "a+b")
+            f.write(stream.read())
+            
+    bucket_name = 'amazon-polly'
+    s3.upload_file(filename, bucket_name, filename,
+        ExtraArgs={'ACL': 'public-read'}
+    )
+    s3_url = 'https://s3-us-west-2.amazonaws.com/%s/%s' % (bucket_name, filename)            
+    
+    return str(s3_url)       
 
 
 if __name__ == '__main__':
