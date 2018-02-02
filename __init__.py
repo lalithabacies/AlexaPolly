@@ -11,8 +11,8 @@ import boto3
 import simplejson as json
 from googletrans import Translator
 import datetime
-#from apscheduler.schedulers.background import BackgroundScheduler
-#import atexit
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 import time
 
 app=Flask(__name__)
@@ -35,8 +35,11 @@ def get_text(option=''):
         source_language      = result['source_language']
         destination_language = result['destination_language']
         translation_service  = result['translation_service']
-        if 'option' in request.args:
-            option = request.args.get('option')
+        try:
+            if 'option' in request.args:
+                option = request.args.get('option')
+        except Exception as e:
+            option = ''
             
         if destination_language:
             if destination_language == 'en':
@@ -123,7 +126,8 @@ def get_shortaudio(combined_url='',option='',limit='1'):
               
     return json.dumps(sounds)   
     #return json.dumps(["https://s3-us-west-2.amazonaws.com/amazon-polly/speech0_2018-02-01_14-37-17.mp3", "https://s3-us-west-2.amazonaws.com/amazon-polly/speech1_2018-02-01_14-37-17.mp3", "https://s3-us-west-2.amazonaws.com/amazon-polly/speech2_2018-02-01_14-37-17.mp3"])    
-            
+
+    
 @app.route('/get_longaudio',methods=['GET','POST'])
 def get_longaudio(option=''):
     now = datetime.datetime.now()
@@ -132,24 +136,24 @@ def get_longaudio(option=''):
     if 'option' in request.args:
         option = request.args.get('option')
 
-    # scheduler = BackgroundScheduler()
-    # scheduler.start()    
-    # scheduler.add_job(
-        # func=lambda: get_shortaudio(combined_url,option,'full'),
-        # id='longsudio',
-        # name='merging mp3 files',
-        # replace_existing=True)
-    # atexit.register(lambda: scheduler.shutdown())
+    scheduler = BackgroundScheduler()
+    scheduler.start()    
+    scheduler.add_job(
+        func=lambda: get_shortaudio(combined_url,option,'full'),
+        id='longsudio',
+        name='merging mp3 files',
+        replace_existing=True)
+    atexit.register(lambda: scheduler.shutdown())
     
     #get_shortaudio(combined_url,option,'full')
-    url = json.loads(get_shortaudio(combined_url,option,1))
+    #url = json.loads(get_shortaudio(combined_url,option,1))
     
     #short_audio_urls = get_shortaudio(option,'full')
     #r = requests.post('http://localhost/AmazonPolly_mp3merge_api/index.php', json = {'Files_To_Merge':json.loads(short_audio_urls),"combined_url":combined_url},headers={'Content-type': 'application/json'})
     
     #return str(r.json()['combined_mp3'])
-    #return str("https://s3-us-west-2.amazonaws.com/amazon-polly/"+str(combined_url))
-    return str(url[0])
+    return str("https://s3-us-west-2.amazonaws.com/amazon-polly/"+str(combined_url))
+    #return ''
 
                 
 
