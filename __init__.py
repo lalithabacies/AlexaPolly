@@ -144,7 +144,7 @@ def get_shortaudio(combined_url='',option='',limit='1'):
         #time.sleep(5)
         
         
-        r = requests.post('http://localhost/AmazonPolly_mp3merge_api/index.php', json = {'Files_To_Merge':short_s3urls,"combined_url":combined_url},headers={'Content-type': 'application/json'})
+        r = requests.post('https://amazon-polly-mergemp3.herokuapp.com/', json = {'Files_To_Merge':short_s3urls,"combined_url":combined_url},headers={'Content-type': 'application/json'})
         return str("https://s3-us-west-2.amazonaws.com/amazon-polly/"+str(combined_url))
     else:  
         return json.dumps(short_s3urls)
