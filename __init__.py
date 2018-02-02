@@ -87,7 +87,7 @@ def get_shortaudio(combined_url='',option='',limit='1'):
         length=1
         splitted_text= split_string(str(get_text(option)),1000)
     else:
-        splitted_text= split_string(str(get_text(option)),1400)
+        splitted_text= split_string(str(get_text(option)),500)
         length=len(splitted_text)   
     # l=0
     # response = polly.synthesize_speech(Text=str(splitted_text[l]), OutputFormat="mp3", VoiceId="Joey")
