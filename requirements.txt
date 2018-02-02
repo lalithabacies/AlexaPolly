@@ -10,4 +10,3 @@ botocore>0
 boto>0
 schedule == 0.4.3
 apscheduler>=0
-threading>0
