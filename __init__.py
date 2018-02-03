@@ -33,6 +33,114 @@ polly = session.client("polly")
 @app.route('/',methods=['GET','POST'])
 def homepage():      
     return ''
+
+@app.route('/gettext',methods=['GET','POST'])
+def gettext():
+    result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=1').json()
+    Text_content = ''
+    if 'source' in result:
+        Text_URL = result['source']
+        Text_content = requests.get(Text_URL).text
+    return Text_content             
+        
+@app.route('/getshortaudio',methods=['GET','POST'])
+def getshortaudio():
+    result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=2').json()
+    ShortAudio_URL = ''
+    if 'source' in result:
+        ShortAudio_URL = result['source']
+    return ShortAudio_URL
+
+@app.route('/getlongaudio',methods=['GET','POST'])
+def getlongaudio():
+    result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=3').json()
+    LongAudio_URL = ''
+    if 'source' in result:
+        LongAudio_URL = result['source']
+    return LongAudio_URL
+
+@app.route('/getshortaudiopolly',methods=['GET','POST']) 
+def getshortaudiopolly():
+    result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=4').json()
+    Text_content = ''
+    if 'source' in result:
+        Text_URL = result['source']
+        Text_content = requests.get(Text_URL).text
+    return getpollyaudio(Text_content,'short')
+
+@app.route('/getlongaudiopolly',methods=['GET','POST']) 
+def getlongaudiopolly():
+    result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=5').json()
+    Text_content = ''
+    if 'source' in result:
+        Text_URL = result['source']
+        Text_content = requests.get(Text_URL).text
+    return getpollyaudio(Text_content,'long')  
+
+@app.route('/get_googletranslate_polly',methods=['GET','POST']) 
+def get_googletranslate_polly():
+    result = requests.get('https://lighthouse247.com//shared_services/babel/babel_test.php?case=6').json()
+    Text_content = ''
+    if 'source' in result:
+        Text_URL = result['source']
+        Text_content = requests.get(Text_URL).text
+        source_language      = result['source_language']
+        destination_language = result['destination_language']
+        translation_service  = result['translation_service']
+        
+        if destination_language:
+            if destination_language == 'en':
+                return getpollyaudio(Text_content,'long')
+            else:
+                if translation_service:
+                    try:
+                        if translation_service == 'google':
+                            translator = Translator()
+                            translation = translator.translate(Text_content,src=source_language,dest=destination_language)
+                            Text_content = translation.text
+                            return getpollyaudio(Text_content,'long')
+                        else: 
+                            pass
+                    except Exception as e:
+                        return getpollyaudio(Text_content,'long')
+                else:
+                    return getpollyaudio(Text_content,'long')
+        else:
+            return getpollyaudio(Text_content,'long')
+
+def getpollyaudio(text,type):
+    now = datetime.datetime.now()
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
+        
+    split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
+    sounds       = []
+    mp3_content=[]
+    
+    if type == 'long':
+        splitted_text= split_string(str(text),1500)
+        length = len(splitted_text)
+        filename   = 'polly_longfile'+str(date_time)+'.mp3'
+    else:    
+        splitted_text= split_string(str(text),1000)
+        length = 1
+        filename   = 'polly_shortfile'+str(date_time)+'.mp3'
+        
+    
+    for l in range(0,length):
+        response = polly.synthesize_speech(Text=str(splitted_text[l]), OutputFormat="mp3", VoiceId="Joey") 
+        with closing(response["AudioStream"]) as stream:
+            f= open(filename, "a+b")
+            f.write(stream.read())
+            
+    bucket_name = 'amazon-polly'
+    s3.upload_file(filename, bucket_name, filename,
+        ExtraArgs={'ACL': 'public-read'}
+    )
+    s3_url = 'https://s3-us-west-2.amazonaws.com/%s/%s' % (bucket_name, filename)            
+    
+    return str(s3_url) 
+    
+#END    
     
 @app.route('/get_text',methods=['GET','POST'])
 def get_text(option=''):
@@ -43,8 +151,8 @@ def get_text(option=''):
         source_language      = result['source_language']
         destination_language = result['destination_language']
         translation_service  = result['translation_service']
-        try:
-            if 'option' in request.args:
+        try:                             
+            if 'option' in request.args: 
                 option = request.args.get('option')
         except Exception as e:
             option = ''
@@ -213,51 +321,7 @@ def get_longaudio(option=''):
     return str("https://s3-us-west-2.amazonaws.com/amazon-polly/"+str(combined_url))
     #return json.dumps(urls)
 
-@app.route('/getaudio',methods=['GET','POST']) 
-def getlong():
-    now = datetime.datetime.now()
-    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
-    option = ''
-    type   = 'short'
-    try:
-        if 'option' in request.args:
-            option = request.args.get('option')
-    except Exception as e:
-        option = ''
-        
-    try:    
-        if 'type' in request.args:
-            type = request.args.get('type')
-    except Exception as e:        
-        type   = 'short'
-        
-    split_string = lambda x, n: [x[i:i+n] for i in range(0, len(x), n)]
-    sounds       = []
-    mp3_content=[]
-    
-    if type == 'long':
-        splitted_text= split_string(str(get_text(option)),1500)
-        length = len(splitted_text)
-        filename   = 'polly_longfile'+str(date_time)+'.mp3'
-    else:    
-        splitted_text= split_string(str(get_text(option)),1000)
-        length = 1
-        filename   = 'polly_shortfile'+str(date_time)+'.mp3'
-        
-    
-    for l in range(0,length):
-        response = polly.synthesize_speech(Text=str(splitted_text[l]), OutputFormat="mp3", VoiceId="Joey") 
-        with closing(response["AudioStream"]) as stream:
-            f= open(filename, "a+b")
-            f.write(stream.read())
-            
-    bucket_name = 'amazon-polly'
-    s3.upload_file(filename, bucket_name, filename,
-        ExtraArgs={'ACL': 'public-read'}
-    )
-    s3_url = 'https://s3-us-west-2.amazonaws.com/%s/%s' % (bucket_name, filename)            
-    
-    return str(s3_url)       
+      
 
 
 if __name__ == '__main__':
