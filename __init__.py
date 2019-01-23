@@ -1,5 +1,5 @@
 # init.py file
-# AlexaPolly
+# AlexaPolly.
 from boto3 import Session
 from botocore.exceptions import BotoCoreError, ClientError
 from contextlib import closing
